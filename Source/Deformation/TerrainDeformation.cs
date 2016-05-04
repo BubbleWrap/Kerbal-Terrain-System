@@ -29,7 +29,7 @@ namespace KerbalTerrainSystem
     namespace Deformation
     {
         /// <summary>Class to save / load Deformation per Savegame</summary>
-        //[KSPScenario(ScenarioCreationOptions.AddToAllGames, new GameScenes[] { GameScenes.SPACECENTER, GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.TRACKSTATION })]
+        [KSPScenario(ScenarioCreationOptions.AddToAllGames, new GameScenes[] { GameScenes.SPACECENTER, GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.TRACKSTATION })]
         public class TerrainDeformation : ScenarioModule
         {
             // Load the saved Deformations

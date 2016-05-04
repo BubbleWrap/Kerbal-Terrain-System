@@ -21,6 +21,10 @@
  * THE SOFTWARE.
 \* ============================================================================= */
 
+/* ============================================================================= *\
+* Modified version by BubbleWrap
+\* ============================================================================= */
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -55,9 +59,21 @@ namespace KerbalTerrainSystem
                     {
                         // ... lower height
                         double vertHeight = data.vertHeight - deformation.depth;
-                        // If the body has an ocean, set a limit
+                        // If the body has an ocean, set a limit, and don't raise the sea bed
                         if (sphere.mapOcean)
-                            vertHeight = Math.Max(sphere.radius + 5d, vertHeight);
+                        {
+                            // If the vert is already below sea level, leave it where it is
+                            if (data.vertHeight <= sphere.radius)
+                            {
+                                //Debug.LogFormat("Ignored vertHeight {0} as below sea level ({1})", data.vertHeight, sphere.radius);
+                                vertHeight = data.vertHeight;
+                            }
+                            // otherwise, cap ourselves to no lower than sea level
+                            else
+                            {
+                                vertHeight = Math.Max(sphere.radius + 5d, vertHeight);
+                            }
+                        }
 
                         // Set the new height
                         data.vertHeight = vertHeight;

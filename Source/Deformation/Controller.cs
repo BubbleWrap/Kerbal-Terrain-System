@@ -21,6 +21,10 @@
  * THE SOFTWARE.
 \* ============================================================================= */
 
+/* ============================================================================= *\
+* Modified version by BubbleWrap
+\* ============================================================================= */
+
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -33,6 +37,10 @@ namespace KerbalTerrainSystem
         [KSPAddon(KSPAddon.Startup.MainMenu, false)]
         public class CollisionController : MonoBehaviour
         {
+            // Generic Crater Values
+            public double craterWidth = 1d;
+            public double craterDepth = 0.1d;
+
             // Singleton Instance
             public static CollisionController Instance { get; private set; }
 
@@ -49,7 +57,8 @@ namespace KerbalTerrainSystem
                     Instance = this;
 
                 // Register the Handler
-                GameEvents.onVesselDestroy.Add(onVesselDestroy); // Use another hook?
+                GameEvents.onCrash.Add(onCrash);
+                GameEvents.onCollision.Add(onCollision);
 
                 // Stop the GC
                 DontDestroyOnLoad(this);
@@ -68,32 +77,55 @@ namespace KerbalTerrainSystem
             }
 
             // If a vessel dies, rebuild the sphere
-            public void onVesselDestroy(Vessel vessel)
+            public void onCrash(EventReport e)
             {
+                Part originPart = e.origin;
+                if ( originPart == null ) { return; }
+
+                Vessel vessel = originPart.vessel;
                 // If there's no vessel, abort
                 if (vessel == null)
                     return;
 
-                if (vessel.state == Vessel.State.DEAD) // More checking needed?
-                {
-                    // Get the CelestialBody
-                    CelestialBody body = vessel.mainBody;
-
-                    // Create the Deformation
-                    Deformation deformation = new Deformation()
-                    {
-                        position = Utility.LLAtoECEF(vessel.latitude, vessel.longitude, vessel.altitude, vessel.mainBody.Radius),
-                        body = vessel.mainBody,
-                        depth = 10d,
-                        width = 400d
-                    };
-                    body.GetComponentInChildren<PQSMod_TerrainDeformation>().deformations.Add(deformation);
-
-                    // Rebuild the Sphere
-                    PQ[] quads = Utility.FindNearbyQuads(body.pqsController, vessel.vesselTransform, 9);
-                    StartCoroutine(Utility.RebuildSphere(quads, body.pqsController));
-                }
+                Debug.LogFormat("[Kerbal Terrain System] onCrash: vessel={0}; speed={1}; mass={2}; state={3}", vessel.vesselName, vessel.speed, vessel.totalMass, vessel.state);
+                GenerateDeformation(vessel);
             }
+            public void onCollision(EventReport e)
+            {
+                Part originPart = e.origin;
+                if (originPart == null) { return; }
+
+                Vessel vessel = originPart.vessel;
+                // If there's no vessel, abort
+                if (vessel == null)
+                    return;
+
+                if ( !(e.other.Equals("the surface"))) { return; }
+                Debug.LogFormat("[Kerbal Terrain System] onCollision: vessel={0}; speed={1}; mass={2}; state={3}; other={4}", vessel.vesselName, vessel.speed, vessel.totalMass, vessel.state, e.other);
+                GenerateDeformation(vessel);
+            }
+
+
+            public void GenerateDeformation(Vessel vessel)
+            {
+                // Get the CelestialBody
+                CelestialBody body = vessel.mainBody;
+
+                // Create the Deformation
+                Deformation deformation = new Deformation()
+                {
+                    position = Utility.LLAtoECEF(vessel.latitude, vessel.longitude, vessel.altitude, vessel.mainBody.Radius),
+                    body = vessel.mainBody,
+                    depth = vessel.speed * craterDepth,
+                    width = vessel.speed * craterWidth
+                };
+                body.GetComponentInChildren<PQSMod_TerrainDeformation>().deformations.Add(deformation);
+
+                // Rebuild the Sphere
+                PQ[] quads = Utility.FindNearbyQuads(body.pqsController, vessel.vesselTransform, 9);
+                StartCoroutine(Utility.RebuildSphere(quads, body.pqsController));
+            }
+
         }
     }
 }

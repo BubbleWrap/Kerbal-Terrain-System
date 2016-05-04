@@ -38,8 +38,8 @@ namespace KerbalTerrainSystem
         public class CollisionController : MonoBehaviour
         {
             // Generic Crater Values
-            public double craterWidth = 1d;
-            public double craterDepth = 0.1d;
+            public double craterWidth = 3d;
+            public double craterDepth = 1d;
 
             // Singleton Instance
             public static CollisionController Instance { get; private set; }
@@ -116,8 +116,8 @@ namespace KerbalTerrainSystem
                 {
                     position = Utility.LLAtoECEF(vessel.latitude, vessel.longitude, vessel.altitude, vessel.mainBody.Radius),
                     body = vessel.mainBody,
-                    depth = vessel.speed * craterDepth,
-                    width = vessel.speed * craterWidth
+                    depth = UtilMath.Clamp(vessel.speed * craterDepth, 5d,50d),
+                    width = UtilMath.Clamp(vessel.speed * craterWidth,100d,1000d)
                 };
                 body.GetComponentInChildren<PQSMod_TerrainDeformation>().deformations.Add(deformation);
 
